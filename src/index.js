@@ -1,18 +1,18 @@
 const express = require('express')
 const { graphqlExpress, graphiqlExpress } = require('graphql-server-express')
 const { makeExecutableSchema } = require('graphql-tools')
-// const mongoose = require('mongoose')
+const mongoose = require('mongoose')
 const Redis = require('ioredis')
 const bodyParser = require('body-parser')
 
-// mongoose.connect('mongodb://localhost/test', {userNewUrlParser: true})
+mongoose.connect('mongodb://localhost/test', {userNewUrlParser: true})
 
-// const db = mongoose.connection
+const db = mongoose.connection
 
 const redis = new Redis()
 
-// db.on('error', console.error.bind(console, 'connection error:'))
-// db.once('open', function() {});
+db.on('error', console.error.bind(console, 'connection error:'))
+db.once('open', function() {});
 
 const schema = require('./schema')
 
