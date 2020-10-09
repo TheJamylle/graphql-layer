@@ -5,7 +5,7 @@ const mongoose = require('mongoose')
 const Redis = require('ioredis')
 const bodyParser = require('body-parser')
 
-mongoose.connect('mongodb://localhost/test', {userNewUrlParser: true})
+mongoose.connect('mongodb://localhost:27017/test', {userNewUrlParser: true})
 
 const db = mongoose.connection
 
