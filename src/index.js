@@ -4,8 +4,9 @@ const { makeExecutableSchema } = require('graphql-tools')
 const mongoose = require('mongoose')
 const Redis = require('ioredis')
 const bodyParser = require('body-parser')
+const User = require('./models/User')
 
-mongoose.connect('mongodb://localhost:27017/test', {userNewUrlParser: true})
+mongoose.connect('mongodb://127.0.0.1:27017/test', { userNewUrlParser: true })
 
 const db = mongoose.connection
 
@@ -13,8 +14,6 @@ const redis = new Redis()
 
 db.on('error', console.error.bind(console, 'connection error:'))
 db.once('open', function() {});
-
-const schema = require('./schema')
 
 const resolvers = {
     Query: {
@@ -24,11 +23,15 @@ const resolvers = {
           } catch (error) {
             return null
           }
-        }
+        },
+        getUsers: () => {
+          User.find()
+        },
+        getUser: (_, { id }) => User.findById(id)
       },
     
       Mutation: {
-        set: async (parent, {key, value}, {redis}) => {
+        set: async (_, {key, value}, {redis}) => {
           try {
             await redis.set(key, value)
             return true
@@ -36,21 +39,23 @@ const resolvers = {
             console.log(error)
             return false
           }
-        }
+        },
+        createUser: (_, { name, email }) => User.create({ name, email })
       }
 }
 
 const app = express()
 
 const executableSchema = makeExecutableSchema({
-  typeDefs: [schema],
-  resolvers,
   context: request => {
     return {
       ...request
     }
-  }
+  },
+  resolvers,
+  typeDefs: require('./schema'),
 })
+
 
 app.use('/graphql', bodyParser.json(), graphqlExpress({
   schema: executableSchema, context: { redis }
