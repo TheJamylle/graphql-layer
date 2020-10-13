@@ -1,32 +1,40 @@
 const express = require('express')
 const { graphqlExpress, graphiqlExpress } = require('graphql-server-express')
 const { makeExecutableSchema } = require('graphql-tools')
-const mongoose = require('mongoose')
 const Redis = require('ioredis')
 const bodyParser = require('body-parser')
-const User = require('./models/User')
+const Company = require('./models/Company')
+const connectMongoDB = require('../config/db')
+const Request = require('request')
 
-mongoose.connect('mongodb://127.0.0.1:27017/test', { userNewUrlParser: true })
+connectMongoDB()
 
-const redis = new Redis()
+const redis = new Redis({ password: 'XlUPvVeJq4llAQ6l75W5OiFv/4JELfitGH25b8Dc21OEI0sgS8t6+YvKgkKSlpRA44KEkSPVowk3tRbg' })
+
+Request.get('http://localhost:8080/companys/name/1', (error, response, body) => {
+  if(error) {
+    return console.dir(error);
+  }
+  return JSON.parse(body)
+})
 
 const resolvers = {
     Query: {
-        get: (parent, {key}, {redis}) => {
+        redisGetCompany: (parent, {key}, {redis}) => {
           try {
             return redis.get(key)
           } catch (error) {
             return null
           }
         },
-        getUsers: () => {
-          User.find()
+        mongoGetCompanys: () => {
+          Company.find()
         },
-        getUser: (_, { id }) => User.findById(id)
+        mongoGetCompany: (_, { id }) => Company.findById(id)
       },
     
       Mutation: {
-        set: async (_, {key, value}, {redis}) => {
+        redisSetCompany: async (_, {key, value}, {redis}) => {
           try {
             await redis.set(key, value)
             return true
@@ -35,7 +43,10 @@ const resolvers = {
             return false
           }
         },
-        createUser: (_, { name, email }) => User.create({ name, email })
+        mongoCreateCompany: async (_, { name }) => {
+          await new Company({ name }).save()
+        
+        }
       }
 }
 
@@ -48,7 +59,7 @@ const executableSchema = makeExecutableSchema({
     }
   },
   resolvers,
-  typeDefs: require('./schema'),
+  typeDefs: require('./graphql/schema'),
 })
 
 
