@@ -8,12 +8,7 @@ const User = require('./models/User')
 
 mongoose.connect('mongodb://127.0.0.1:27017/test', { userNewUrlParser: true })
 
-const db = mongoose.connection
-
 const redis = new Redis()
-
-db.on('error', console.error.bind(console, 'connection error:'))
-db.once('open', function() {});
 
 const resolvers = {
     Query: {
