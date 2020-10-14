@@ -3,9 +3,6 @@ const { graphqlExpress, graphiqlExpress } = require('graphql-server-express')
 const { makeExecutableSchema } = require('graphql-tools')
 const Redis = require('ioredis')
 const bodyParser = require('body-parser')
-const Company = require('./models/Company')
-const connectMongoDB = require('../config/db')
-const Request = require('request')
 const fetch = require('node-fetch')
 const { config } = require('dotenv');
 
@@ -15,30 +12,29 @@ config({
 
 connectMongoDB()
 
-const { API_WEBSERVICE, BOT_TOKEN } = process.env
+const { API_WEBSERVICE, BOT_TOKEN, REDIS_AUTH } = process.env
 
-const redis = new Redis({ password: 'XlUPvVeJq4llAQ6l75W5OiFv/4JELfitGH25b8Dc21OEI0sgS8t6+YvKgkKSlpRA44KEkSPVowk3tRbg' })
+const redis = new Redis({ password: REDIS_AUTH })
 
 const resolvers = {
       Query: {
-        redisGetCompany: async (_, {id, key}, {redis}) => {
-          console.log(await fetch(`${API_WEBSERVICE}companys/name/${id}`, {method: 'GET', headers: { Authorization: `Bearer ${BOT_TOKEN}` }}).then(res => res.json()))
+        redisGet: async (_, {id, key, data}, {redis}) => {
           try {
-            
+            await fetch(`${API_WEBSERVICE}${data}s/${key}/${id}`, 
+              { method: 'GET', headers: { Authorization: `Bearer ${BOT_TOKEN}` }}
+            ).then(res => res.json())
             return redis.hget('company:'+id, key)
           } catch (error) {
-            console.log(await Company.findById(id))
-            return await Company.findById(id)
+            console.log(error)
           }
         }
       },
     
       Mutation: {
-        redisSetCompany: async (_, {id, key}, {redis}) => {
+        redisSet: async (_, {id, key, data}, {redis}) => {
           try {
             //await redis.set(id, key)
-            await redis.hset(`company:${id}`, 'name', key)
-            await new Company({id, name: key}).save()
+            await redis.hset(`${data}:${id}`, 'name', key)
             return true
           } catch (error) {
             console.log(error)
