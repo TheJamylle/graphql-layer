@@ -3,13 +3,13 @@ module.exports = `
 type Query {
   mongoGetCompanys: [Company!] 
 
-  redisGetCompany(key: String!): String!
+  redisGetCompany(id: String!, key: String!): String
 
   mongoGetCompany(id: ID!): Company
 }
 
 type Mutation {
-  redisSetCompany(key: String!, value:  String!): Boolean!
+  redisSetCompany(id: String!, key: String!): Boolean!
 
   mongoCreateCompany(name: String!): Company
 }

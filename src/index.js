@@ -6,47 +6,45 @@ const bodyParser = require('body-parser')
 const Company = require('./models/Company')
 const connectMongoDB = require('../config/db')
 const Request = require('request')
+const fetch = require('node-fetch')
+const { config } = require('dotenv');
+
+config({
+  path: '.env',
+});
 
 connectMongoDB()
 
+const { API_WEBSERVICE, BOT_TOKEN } = process.env
+
 const redis = new Redis({ password: 'XlUPvVeJq4llAQ6l75W5OiFv/4JELfitGH25b8Dc21OEI0sgS8t6+YvKgkKSlpRA44KEkSPVowk3tRbg' })
 
-Request.get('http://localhost:8080/companys/name/1', (error, response, body) => {
-  if(error) {
-    return console.dir(error);
-  }
-  return JSON.parse(body)
-})
-
 const resolvers = {
-    Query: {
-        redisGetCompany: (parent, {key}, {redis}) => {
+      Query: {
+        redisGetCompany: async (_, {id, key}, {redis}) => {
+          console.log(await fetch(`${API_WEBSERVICE}companys/name/${id}`, {method: 'GET', headers: { Authorization: `Bearer ${BOT_TOKEN}` }}).then(res => res.json()))
           try {
-            return redis.get(key)
+            
+            return redis.hget('company:'+id, key)
           } catch (error) {
-            return null
+            console.log(await Company.findById(id))
+            return await Company.findById(id)
           }
-        },
-        mongoGetCompanys: () => {
-          Company.find()
-        },
-        mongoGetCompany: (_, { id }) => Company.findById(id)
+        }
       },
     
       Mutation: {
-        redisSetCompany: async (_, {key, value}, {redis}) => {
+        redisSetCompany: async (_, {id, key}, {redis}) => {
           try {
-            await redis.set(key, value)
+            //await redis.set(id, key)
+            await redis.hset(`company:${id}`, 'name', key)
+            await new Company({id, name: key}).save()
             return true
           } catch (error) {
             console.log(error)
             return false
           }
         },
-        mongoCreateCompany: async (_, { name }) => {
-          await new Company({ name }).save()
-        
-        }
       }
 }
 
