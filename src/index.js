@@ -10,22 +10,23 @@ config({
   path: '.env',
 });
 
-connectMongoDB()
 
 const { API_WEBSERVICE, BOT_TOKEN, REDIS_AUTH } = process.env
 
+const headers = { Authorization: `Bearer ${BOT_TOKEN}`, 'Content-Type': 'application/json', 'Accept': 'application/json',}
+
 const redis = new Redis({ password: REDIS_AUTH })
+
+
 
 const resolvers = {
       Query: {
         redisGet: async (_, {id, key, data}, {redis}) => {
           try {
-            await fetch(`${API_WEBSERVICE}${data}s/${key}/${id}`, 
-              { method: 'GET', headers: { Authorization: `Bearer ${BOT_TOKEN}` }}
-            ).then(res => res.json())
-            return redis.hget('company:'+id, key)
+            return redis.hget(`${data}:`+id, key)
           } catch (error) {
             console.log(error)
+            return false
           }
         }
       },
@@ -33,8 +34,10 @@ const resolvers = {
       Mutation: {
         redisSet: async (_, {id, key, data}, {redis}) => {
           try {
-            //await redis.set(id, key)
-            await redis.hset(`${data}:${id}`, 'name', key)
+            const value = await fetch(`${API_WEBSERVICE}${data}s/${key}/${id}`, 
+              { method: 'GET', headers}
+            ).then(res => res.json())
+            await redis.hset(`${data}:${id}`, key, value )
             return true
           } catch (error) {
             console.log(error)
