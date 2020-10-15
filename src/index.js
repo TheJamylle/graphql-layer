@@ -21,7 +21,7 @@ const redis = new Redis({ password: REDIS_AUTH })
 
 const resolvers = {
       Query: {
-        redisGet: async (_, {id, key, data}, {redis}) => {
+        redisGet: async (_, {id, key, data}) => {
           try {
             return redis.hget(`${data}:`+id, key)
           } catch (error) {
@@ -32,7 +32,7 @@ const resolvers = {
       },
     
       Mutation: {
-        redisSet: async (_, {id, key, data}, {redis}) => {
+        redisSet: async (_, {id, key, data}) => {
           try {
             const value = await fetch(`${API_WEBSERVICE}${data}s/${key}/${id}`, 
               { method: 'GET', headers}
